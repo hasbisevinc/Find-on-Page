@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Find On Page</string>
+    <string name="take_a_new_photo">Take a new photo</string>
+    <string name="find">Find</string>
+    <string name="text_to_search">Text to search</string>
+    <string name="permission_denied">permission denied</string>
+    <string name="no_result_found">No result found</string>
+    <string name="result_count">%1$s result found</string>
+    <string name="try_again">Please try again</string>
+</resources>
