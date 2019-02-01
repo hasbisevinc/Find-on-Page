@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kağıtta Bul</string>
+    <string name="take_a_new_photo">Fotoğraf çek</string>
+    <string name="find">Bul</string>
+    <string name="select_all">Hepsini seç</string>
+    <string name="text_to_search">Aranacak kelime</string>
+    <string name="permission_denied">İzin alınamadı</string>
+    <string name="no_result_found">Sonuç bulunamadı</string>
+    <string name="result_count">%1$s tane sonuç bulundu</string>
+    <string name="try_again">Lütfen tekrar deneyiniz</string>
+    <string name="no_text_found_try_again">Resimde kelime bulunamadı, lütfen tekrar deneyiniz</string>
+    <string name="please_wait">Lütfen bekleyin</string>
+    <string name="show_search_bar">Arama barını göster</string>
+    <string name="hide_search_bar">Arama barını gizle</string>
+    <string name="close">Kapat</string>
+</resources>
