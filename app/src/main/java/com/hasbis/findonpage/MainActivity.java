@@ -2,8 +2,12 @@ package com.hasbis.findonpage;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
@@ -12,10 +16,12 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -23,7 +29,6 @@ import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.ml.vision.FirebaseVision;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
@@ -36,6 +41,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import dmax.dialog.SpotsDialog;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final int CAMERA_REQUEST = 1888;
@@ -45,13 +52,17 @@ public class MainActivity extends AppCompatActivity {
 
     private DrawableImageView imageView;
     private LinearLayout findBox;
+    private LinearLayout showFindBoxLayout;
     private Button photoButton;
     private Button findButton;
+    private Button selectAllButton;
     private EditText textToFind;
-    private String mCameraFileName = "";
 
+    private String mCameraFileName = "";
     private int mlImageHeight = -1;
     private int mlImageWidth = -1;
+
+    private AlertDialog spotsDialog = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -60,8 +71,10 @@ public class MainActivity extends AppCompatActivity {
 
         this.imageView = this.findViewById(R.id.preview_imageview);
         this.findBox = this.findViewById(R.id.find_layout);
+        this.showFindBoxLayout = this.findViewById(R.id.show_find_box_layout);
         this.photoButton = this.findViewById(R.id.camera_button);
         this.findButton = this.findViewById(R.id.find_button);
+        this.selectAllButton = this.findViewById(R.id.select_all_button);
         this.textToFind = this.findViewById(R.id.word_edittext);
 
         photoButton.setOnClickListener(new View.OnClickListener() {
@@ -71,12 +84,71 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        selectAllButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (firebaseVisionText != null &&
+                        !TextUtils.isEmpty(firebaseVisionText.getText())) {
+                    showSelectAllDialog();
+                }
+            }
+        });
+
         findButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (textToFind.getText().toString().length() < 1) {
+                    return;
+                }
+
                 markText(textToFind.getText().toString());
+                hideKeyboard();
+                hideFindBox();
             }
         });
+
+        showFindBoxLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showFindBox();
+            }
+        });
+
+        imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                hideKeyboard();
+                hideFindBox();
+            }
+        });
+    }
+
+    private void showSelectAllDialog() {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.select_all);
+
+        final EditText input = new EditText(this);
+        input.setText(firebaseVisionText.getText());
+        builder.setView(input);
+
+        builder.setPositiveButton(R.string.close, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+
+        builder.show();
+    }
+
+    private void hideFindBox() {
+        findBox.animate().translationY(-1 * findBox.getHeight());
+        showFindBoxLayout.setAlpha(0.7f);
+    }
+
+    private void showFindBox() {
+        findBox.animate().translationY(0);
+        showFindBoxLayout.setAlpha(0);
     }
 
     @Override
@@ -132,9 +204,7 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == CAMERA_PERMISSION_CODE) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Intent cameraIntent = new
-                        Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(cameraIntent, CAMERA_REQUEST);
+                onCameraButtonClicked();
             } else {
                 Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_LONG).show();
             }
@@ -146,6 +216,7 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == CAMERA_REQUEST) {
+                imageView.setRects(new ArrayList<Rect>());
                 findBox.setVisibility(View.VISIBLE);
                 photoButton.setVisibility(View.GONE);
                 Uri image = null;
@@ -155,11 +226,18 @@ public class MainActivity extends AppCompatActivity {
                     imageView.setVisibility(View.VISIBLE);
                     findText(image);
                 }
-                File file = new File(mCameraFileName);
-                if (!file.exists()) {
-                    file.mkdir();
-                }
             }
+        }
+    }
+
+    public void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
+        View view = getCurrentFocus();
+        if (view == null) {
+            view = new View(this);
+        }
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
     }
 
@@ -186,25 +264,102 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        showLoadingDialog();
+        runOCR(image);
+    }
+
+    private void runOCR(final FirebaseVisionImage image) {
+        runOCR(image,false, false);
+    }
+
+    private void runOCR(final FirebaseVisionImage image, final boolean rotatedLeft, final boolean rotatedRight) {
         FirebaseVisionTextRecognizer detector = FirebaseVision.getInstance()
                 .getOnDeviceTextRecognizer();
 
-        Task<FirebaseVisionText> result =
-                detector.processImage(image)
+        detector.processImage(image)
                 .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
                     @Override
                     public void onSuccess(FirebaseVisionText local_firebaseVisionText) {
+                        hideLoadingDialog();
                         firebaseVisionText = local_firebaseVisionText;
+                        if (firebaseVisionText == null ||
+                                TextUtils.isEmpty(firebaseVisionText.getText())) {
+                            if (!rotatedLeft) {
+                                // rotate left
+                                showLoadingDialog();
+                                runOCR(rotateImage(image, true),
+                                        true, false);
+                            } else if (rotatedLeft && !rotatedRight) {
+                                // rotate right
+                                showLoadingDialog();
+                                runOCR(rotateImage(image, false),
+                                        true, false);
+                            } else {
+                                //fail
+                                onCameraButtonClicked();
+                                showToast(getString(R.string.no_text_found_try_again));
+                            }
+                        } else {
+                            showFindBox();
+                        }
                     }
                 })
                 .addOnFailureListener(
-                        new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Log.e(TAG, "onFailure: ", e);
-                            }
-                        });
+                    new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            hideLoadingDialog();
+                            Log.e(TAG, "onFailure: ", e);
+                        }
+                });
+    }
 
+    private void showLoadingDialog(){
+        if (spotsDialog != null) {
+            hideLoadingDialog();
+        }
+
+        spotsDialog = new SpotsDialog.Builder().setContext(this)
+                .setMessage(getString(R.string.please_wait))
+                .setCancelable(false)
+                .build();
+        spotsDialog.show();
+    }
+
+    private void hideLoadingDialog() {
+        if (spotsDialog != null) {
+            spotsDialog.dismiss();
+        }
+
+        spotsDialog = null;
+    }
+
+    private FirebaseVisionImage rotateImage(final FirebaseVisionImage image, final boolean rotateLeft) {
+        float angle = 270;
+        if (rotateLeft) {
+            angle = 90;
+        }
+
+        Bitmap bitmap = rotateBitmap(image.getBitmapForDebugging(), angle);
+        return FirebaseVisionImage.fromBitmap(bitmap);
+    }
+
+    public Bitmap rotateBitmap(Bitmap source, float angle)
+    {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(angle);
+        return Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(), source.getHeight(), matrix, true);
+    }
+
+    private void showToast(final String str) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(MainActivity.this, str, Toast.LENGTH_LONG)
+                        .show();
+            }
+        });
     }
 
     private void markText(String text) {
