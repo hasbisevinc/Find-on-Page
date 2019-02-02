@@ -33,6 +33,7 @@ import com.google.firebase.ml.vision.FirebaseVision;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
+import com.hasbis.findonpage.utils.FirebaseAnalyticsUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -63,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private int mlImageWidth = -1;
 
     private AlertDialog spotsDialog = null;
+    private FirebaseAnalyticsUtils analyticsUtils;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -77,9 +79,13 @@ public class MainActivity extends AppCompatActivity {
         this.selectAllButton = this.findViewById(R.id.select_all_button);
         this.textToFind = this.findViewById(R.id.word_edittext);
 
+        analyticsUtils = FirebaseAnalyticsUtils.getInstance();
+        analyticsUtils.init(this);
+
         photoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                analyticsUtils.onNewPhoto();
                 onCameraButtonClicked();
             }
         });
@@ -89,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (firebaseVisionText != null &&
                         !TextUtils.isEmpty(firebaseVisionText.getText())) {
+                    analyticsUtils.onSelectAll();
                     showSelectAllDialog();
                 }
             }
@@ -101,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
+                analyticsUtils.onNewSearch();
                 markText(textToFind.getText().toString());
                 hideKeyboard();
                 hideFindBox();
@@ -110,6 +118,7 @@ public class MainActivity extends AppCompatActivity {
         showFindBoxLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                analyticsUtils.onShowFindBoxClicked();
                 showFindBox();
             }
         });
@@ -161,6 +170,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.new_image) {
+            analyticsUtils.onNewPhoto();
             onCameraButtonClicked();
         }
         return super.onOptionsItemSelected(item);
