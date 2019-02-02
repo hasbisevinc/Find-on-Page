@@ -68,7 +68,7 @@
     </LinearLayout>
 
 
-    <com.hasbis.findonpage.DrawableImageView
+    <com.hasbis.findonpage.features.views.DrawableImageView
         android:id="@+id/preview_imageview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

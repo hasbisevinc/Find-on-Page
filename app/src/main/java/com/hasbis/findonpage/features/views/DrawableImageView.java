@@ -1,4 +1,4 @@
-package com.hasbis.findonpage;
+package com.hasbis.findonpage.features.views;
 
 import android.content.Context;
 import android.graphics.Canvas;

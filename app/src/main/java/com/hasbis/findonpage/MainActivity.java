@@ -27,6 +27,7 @@ import android.widget.Toast;
 
 import com.hasbis.findonpage.features.ocr.ImageToText;
 import com.hasbis.findonpage.features.ocr.OCRActions;
+import com.hasbis.findonpage.features.views.DrawableImageView;
 import com.hasbis.findonpage.utils.FirebaseAnalyticsUtils;
 
 import java.io.File;
@@ -48,8 +49,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int CAMERA_REQUEST = 1888;
     private static final int CAMERA_PERMISSION_CODE = 100;
 
-    String textResult = "";
-
     private DrawableImageView imageView;
     private LinearLayout findBox;
     private LinearLayout showFindBoxLayout;
@@ -59,10 +58,10 @@ public class MainActivity extends AppCompatActivity {
     private EditText textToFind;
 
     private String mCameraFileName = "";
+    String textResult = "";
 
     private AlertDialog spotsDialog = null;
     private FirebaseAnalyticsUtils analyticsUtils;
-
     private ImageToText ocr;
     private CompositeDisposable compositeDisposable = new CompositeDisposable();;
 
@@ -71,6 +70,66 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        initAnalytic();
+        initView();
+        initButtons();
+        initOCR();
+        bindToOCR();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.new_image) {
+            analyticsUtils.onNewPhoto();
+            onCameraButtonClicked();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == CAMERA_PERMISSION_CODE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                onCameraButtonClicked();
+            } else {
+                showToast(getString(R.string.permission_denied));
+            }
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == CAMERA_REQUEST) {
+                imageView.setRects(new ArrayList<Rect>());
+                findBox.setVisibility(View.VISIBLE);
+                photoButton.setVisibility(View.GONE);
+                Uri image = null;
+                if (mCameraFileName != null) {
+                    image = Uri.fromFile(new File(mCameraFileName));
+                    imageView.setImageURI(image);
+                    imageView.setVisibility(View.VISIBLE);
+                    startOCR(image);
+                }
+            }
+        }
+    }
+
+    private void initAnalytic() {
+        analyticsUtils = FirebaseAnalyticsUtils.getInstance();
+        analyticsUtils.init(this);
+    }
+
+    private void initView() {
         this.imageView = this.findViewById(R.id.preview_imageview);
         this.findBox = this.findViewById(R.id.find_layout);
         this.showFindBoxLayout = this.findViewById(R.id.show_find_box_layout);
@@ -78,12 +137,9 @@ public class MainActivity extends AppCompatActivity {
         this.findButton = this.findViewById(R.id.find_button);
         this.selectAllButton = this.findViewById(R.id.select_all_button);
         this.textToFind = this.findViewById(R.id.word_edittext);
+    }
 
-        analyticsUtils = FirebaseAnalyticsUtils.getInstance();
-        analyticsUtils.init(this);
-
-        initOCR();
-
+    private void initButtons() {
         photoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -135,7 +191,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void initOCR() {
         ocr = new ImageToText(this);
+    }
 
+    private void bindToOCR() {
         ocr.getActionObserveable()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -258,22 +316,6 @@ public class MainActivity extends AppCompatActivity {
         showFindBoxLayout.setAlpha(0);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.new_image) {
-            analyticsUtils.onNewPhoto();
-            onCameraButtonClicked();
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
     private void onCameraButtonClicked() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
@@ -305,37 +347,6 @@ public class MainActivity extends AppCompatActivity {
         Uri outuri = Uri.fromFile(outFile);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, outuri);
         startActivityForResult(intent, CAMERA_REQUEST);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == CAMERA_PERMISSION_CODE) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                onCameraButtonClicked();
-            } else {
-                showToast(getString(R.string.permission_denied));
-            }
-        }
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == Activity.RESULT_OK) {
-            if (requestCode == CAMERA_REQUEST) {
-                imageView.setRects(new ArrayList<Rect>());
-                findBox.setVisibility(View.VISIBLE);
-                photoButton.setVisibility(View.GONE);
-                Uri image = null;
-                if (mCameraFileName != null) {
-                    image = Uri.fromFile(new File(mCameraFileName));
-                    imageView.setImageURI(image);
-                    imageView.setVisibility(View.VISIBLE);
-                    startOCR(image);
-                }
-            }
-        }
     }
 
     public void hideKeyboard() {
