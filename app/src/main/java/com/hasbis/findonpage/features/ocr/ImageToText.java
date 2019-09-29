@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.net.Uri;
-import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -21,6 +20,7 @@ import java.util.ArrayList;
 
 import io.reactivex.Observable;
 import io.reactivex.Observer;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.subjects.PublishSubject;
 
 public class ImageToText {
@@ -50,8 +50,8 @@ public class ImageToText {
         FirebaseVisionImage image;
         try {
             image = FirebaseVisionImage.fromFilePath(context, uri);
-            mlImageWidth = image.getBitmapForDebugging().getWidth();
-            mlImageHeight = image.getBitmapForDebugging().getHeight();
+            mlImageWidth = image.getBitmap().getWidth();
+            mlImageHeight = image.getBitmap().getHeight();
         } catch (IOException e) {
             Log.e(TAG, "findText: ", e);
             return;
@@ -146,7 +146,7 @@ public class ImageToText {
             angle = 90;
         }
 
-        Bitmap bitmap = rotateBitmap(image.getBitmapForDebugging(), angle);
+        Bitmap bitmap = rotateBitmap(image.getBitmap(), angle);
         return FirebaseVisionImage.fromBitmap(bitmap);
     }
 
