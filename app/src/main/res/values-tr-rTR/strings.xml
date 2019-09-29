@@ -18,4 +18,7 @@
     <string name="take_a_photo_from_gallery">Galeriden resim seç</string>
     <string name="take_new_photo_from">Yeni fotoğrafı şuradan al:</string>
     <string name="cancel">İptal</string>
+    <string name="camera_description">Kameranızdan taratmak istediğiniz belgenin fotoğrafını çekin ve bu belge üzerinde kelime aramaya hemen başlayın</string>
+    <string name="credits">Gerekli kredi:1</string>
+    <string name="gallery_description">Galeriden taratmak istediğiniz belgenin fotoğrafını çekin ve bu belge üzerinde kelime aramaya hemen başlayın</string>
 </resources>

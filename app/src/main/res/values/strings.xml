@@ -17,4 +17,7 @@
     <string name="take_a_photo_from_gallery">Take a photo from gallery</string>
     <string name="take_new_photo_from">Take new photo from:</string>
     <string name="cancel">Cancel</string>
+    <string name="camera_description">Capture a photo from your camera and search any words on this photo</string>
+    <string name="credits">Required credits:1</string>
+    <string name="gallery_description">Capture a photo from your gallery and search any words on this photo</string>
 </resources>
