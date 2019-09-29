@@ -16,10 +16,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -29,8 +31,12 @@ import com.hasbis.findonpage.features.ocr.ImageToText;
 import com.hasbis.findonpage.features.ocr.OCRActions;
 import com.hasbis.findonpage.features.views.DrawableImageView;
 import com.hasbis.findonpage.utils.FirebaseAnalyticsUtils;
+import com.orhanobut.dialogplus.DialogPlus;
+import com.orhanobut.dialogplus.ListHolder;
+import com.orhanobut.dialogplus.OnItemClickListener;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -47,12 +53,14 @@ import io.reactivex.schedulers.Schedulers;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private static final int CAMERA_REQUEST = 1888;
+    private static final int GALLERY_REQUEST = 2888;
     private static final int CAMERA_PERMISSION_CODE = 100;
 
     private DrawableImageView imageView;
     private LinearLayout findBox;
     private LinearLayout showFindBoxLayout;
     private Button photoButton;
+    private Button galleryButton;
     private Button findButton;
     private Button selectAllButton;
     private EditText textToFind;
@@ -87,8 +95,38 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.new_image) {
-            analyticsUtils.onNewPhoto();
-            onCameraButtonClicked();
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                    this, android.R.layout.simple_list_item_1, new String[]{getString(R.string.take_a_photo_from_camera),
+                    getString(R.string.take_a_photo_from_gallery), getString(R.string.cancel)}
+            );
+            DialogPlus dialog = DialogPlus.newDialog(this)
+                    .setAdapter(adapter)
+                    .setOnItemClickListener(new OnItemClickListener() {
+                        @Override
+                        public void onItemClick(DialogPlus dialog, Object item, View view, int position) {
+                        }
+                    })
+                    .setContentHolder(new ListHolder())
+                    .setGravity(Gravity.CENTER)
+                    .setExpanded(true)
+                    .setHeader(R.layout.dialog_header)
+                    .setOnItemClickListener(new OnItemClickListener() {
+                        @Override
+                        public void onItemClick(DialogPlus dialog, Object item, View view, int position) {
+                            if (position == 0) {
+                                analyticsUtils.onNewPhoto();
+                                onCameraButtonClicked();
+                            } else if (position == 1) {
+                                analyticsUtils.onNewGalleryPhoto();
+                                Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+                                photoPickerIntent.setType("image/*");
+                                startActivityForResult(photoPickerIntent, GALLERY_REQUEST);
+                            }
+                            dialog.dismiss();
+                        }
+                    })
+                    .create();
+            dialog.show();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -110,18 +148,28 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == CAMERA_REQUEST) {
-                imageView.setRects(new ArrayList<Rect>());
-                findBox.setVisibility(View.VISIBLE);
-                photoButton.setVisibility(View.GONE);
-                Uri image = null;
+                updateUIForImageGained();
                 if (mCameraFileName != null) {
-                    image = Uri.fromFile(new File(mCameraFileName));
+                    Uri image = Uri.fromFile(new File(mCameraFileName));
                     imageView.setImageURI(image);
                     imageView.setVisibility(View.VISIBLE);
                     startOCR(image);
                 }
+            } else if (requestCode == GALLERY_REQUEST) {
+                updateUIForImageGained();
+                final Uri image = data.getData();
+                imageView.setImageURI(image);
+                imageView.setVisibility(View.VISIBLE);
+                startOCR(image);
             }
         }
+    }
+
+    private void updateUIForImageGained() {
+        imageView.setRects(new ArrayList<Rect>());
+        findBox.setVisibility(View.VISIBLE);
+        photoButton.setVisibility(View.GONE);
+        galleryButton.setVisibility(View.GONE);
     }
 
     private void initAnalytic() {
@@ -134,6 +182,7 @@ public class MainActivity extends AppCompatActivity {
         this.findBox = this.findViewById(R.id.find_layout);
         this.showFindBoxLayout = this.findViewById(R.id.show_find_box_layout);
         this.photoButton = this.findViewById(R.id.camera_button);
+        this.galleryButton = this.findViewById(R.id.gallery_button);
         this.findButton = this.findViewById(R.id.find_button);
         this.selectAllButton = this.findViewById(R.id.select_all_button);
         this.textToFind = this.findViewById(R.id.word_edittext);
@@ -145,6 +194,16 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 analyticsUtils.onNewPhoto();
                 onCameraButtonClicked();
+            }
+        });
+
+        galleryButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                analyticsUtils.onNewGalleryPhoto();
+                Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+                photoPickerIntent.setType("image/*");
+                startActivityForResult(photoPickerIntent, GALLERY_REQUEST);
             }
         });
 

@@ -42,6 +42,10 @@ public class FirebaseAnalyticsUtils {
         saveLog("PHOTO", "NEW_PHOTO");
     }
 
+    public void onNewGalleryPhoto() {
+        saveLog("GALLERY", "NEW_GALLERY");
+    }
+
     public void onNewSearch() {
         saveLog("SEARCH", "NEW_SEARCH");
     }

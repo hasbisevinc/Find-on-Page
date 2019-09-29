@@ -2,6 +2,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item android:id="@+id/new_image"
-        android:title="@string/take_a_new_photo"
+        android:title="@string/take_a_new"
         app:showAsAction="always"/>
 </menu>
