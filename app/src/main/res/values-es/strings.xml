@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Encuéntralo en la página</string>
+    <string name="take_a_new">Tomar una nueva foto</string>
+    <string name="find">Encontrar</string>
+    <string name="select_all">Seleccionar todo</string>
+    <string name="text_to_search">Texto a buscar</string>
+    <string name="permission_denied">permiso denegado</string>
+    <string name="no_result_found">No se han encontrado resultados</string>
+    <string name="result_count">Se encontró %1$s resultado</string>
+    <string name="try_again">Inténtalo de nuevo</string>
+    <string name="no_text_found_try_again">No se encontró texto en la imagen, intente nuevamente</string>
+    <string name="please_wait">por favor espera</string>
+    <string name="show_search_bar">Mostrar barra de búsqueda</string>
+    <string name="hide_search_bar">Ocultar barra de búsqueda</string>
+    <string name="close">Cerrar</string>
+    <string name="take_a_photo_from_camera">Tomar una foto de la cámara</string>
+    <string name="take_a_photo_from_gallery">Toma una foto de la galería</string>
+    <string name="take_new_photo_from">Tomar nueva foto de:</string>
+    <string name="cancel">Cancelar</string>
+    <string name="camera_description">Capture una foto de su cámara y busque cualquier palabra en esta foto</string>
+    <string name="credits">Créditos requeridos: 1</string>
+    <string name="gallery_description">Capture una foto de su galería y busque cualquier palabra en esta foto</string>
+</resources>
