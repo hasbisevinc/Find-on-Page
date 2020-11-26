@@ -7,6 +7,8 @@ jobs:
         auth:
           username: mydockerhub-user
           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
+    java:
+      version: openjdk7
     environment:
       JVM_OPTS: -Xmx3200m
     steps:
