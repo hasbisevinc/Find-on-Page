@@ -23,7 +23,7 @@ jobs:
           name: Download Dependencies
           command: |
               sudo chmod +x ./gradlew
-              ./gradlew androidDependencies 
+              sudo ./gradlew androidDependencies 
       - save_cache:
           paths:
             - ~/.gradle
@@ -32,7 +32,7 @@ jobs:
           name: build apk
           command: |
               sudo chmod +x ./gradlew
-              ./gradlew assembleRelease
+              sudo ./gradlew assembleRelease
 #      - run:
 #          name: Run Tests
 #          command: ./gradlew lint test
